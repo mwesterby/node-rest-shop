@@ -1,12 +1,40 @@
 const express = require('express');
 const router = express.Router(); // express router - ships with express - gives us cabibilities to handle different routes, endpoints with differet http verbs
 const mongoose = require('mongoose');
+const multer = require('multer'); // used for importing of files
 
+const storage = multer.diskStorage({  // multer will execute these functions whenever a new file is recieved
+    destination: function(req, file, cb) { // where files are stored
+        cb(null, './uploads/');
+    },
+    filename: function(req, file, cb) { // define what the file should be named
+        cb(null, new Date().toISOString() + file.originalname);
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        // accept a file
+        cb(null, true);
+    } else {
+        // reject a file
+        cb(null, false);
+    } 
+};
+
+const upload = multer({ // configuration to multer - specifies a folder where multer will try to store all incoming files - this folder isnt publically accessoble by default so will have to be turned into a static folder
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 5 // files upto 5MB
+    },
+    fileFilter: fileFilter
+    }); 
 const Product = require('../models/product');
 
 router.get('/', (req, res, next) => { // get is a method that will handle incoming GET requests
     Product.find() // if you dont pass an argument to find, it will find all elements
-    .select('name price _id') // list the fields you want to fetch
+    .select('name price _id productImage') // list the fields you want to fetch
     .exec()
     .then(docs => {
         const response = {
@@ -15,6 +43,7 @@ router.get('/', (req, res, next) => { // get is a method that will handle incomi
                 return {
                     name: doc.name,
                     price: doc.price,
+                    productImage: doc.productImage,
                     id: doc._id,
                     request: {
                         type: 'GET', // can write however you want - just more information for the user on which URl to use to get more information about this object
@@ -33,11 +62,12 @@ router.get('/', (req, res, next) => { // get is a method that will handle incomi
     })
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', upload.single('productImage'), (req, res, next) => { // you can pass as many arguments (handlers) as you want prior to the function before we handle the incoming request. upload.single() will parse single file - 'productImage' name of the key when sending the form-data
     const product = new Product({
         _id: new mongoose.Types.ObjectId(), // will generate a unique id
         name: req.body.name, // comes from body-parser 
-        price: req.body.price
+        price: req.body.price,
+        productImage: req.file.path
     });
     product
         .save()
@@ -65,7 +95,7 @@ router.post('/', (req, res, next) => {
 router.get('/:productId', (req, res, next) => { // using `:` followed by any variable name of your choice
     const id = req.params.productId; // extract the id
     Product.findById(id)
-    .select('name price _id')
+    .select('name price _id productImage')
     .exec()
     .then(doc => {
         console.log("From database", doc);

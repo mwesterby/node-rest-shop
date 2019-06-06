@@ -20,6 +20,7 @@ mongoose.connect(
 mongoose.Promise = global.Promise; // uses the node.js promise implementation (helps with deprecation warnings)
 
 app.use(morgan('dev'));
+app.use('/uploads', express.static('uploads')); // middleware - makes a foler statically (so publicly) available - makes the 'uploads' folder available to everyone - the '/uploads' at the start will parse only requests targeted at '/uploads'
 app.use(bodyParser.urlencoded({extended: false})); // extended false - only support simple bodies for URL encoded data
 app.use(bodyParser.json());
 
