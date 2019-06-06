@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 
 const productRoutes = require('./api/routes/products');
 const orderRoutes = require('./api/routes/orders');
+const userRoutes = require('./api/routes/user');
 
 mongoose.connect(
     'mongodb+srv://admin:' +
@@ -41,6 +42,7 @@ app.use((req, res, next) => {
 // Routes wich should handle requests
 app.use('/products', productRoutes); // `use()` sets up a middleware - so an incoming request has to go though app.use and to whatever we pass to it. Anything starting with `/produts` in the URL will be forwarded to api/routes/products.js
 app.use('/orders', orderRoutes);
+app.use('/user', userRoutes);
 
 // If we get to this point, not of the routers whcih were set up were able to handle the request
 app.use((req, res, next) => {
