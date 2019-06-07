@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt'); // used for encrypting passwords
+const jwt = require('jsonwebtoken'); // JSON web token
 
 const User = require('../models/user'); // require the user model
 
@@ -43,6 +44,48 @@ router.post('/signup', (req, res, next) => { // for adding a new user
                 });
             }
         });
+});
+
+router.post('/login', (req, res, next) => {
+    User.find({ email:  req.body.email })
+    .exec()
+    .then(user => {
+        if(user.length < 1) {   // if the find function returns an array with no user in it (array should only ever return one user if there is a match as no duplicate emails are allowed)
+            return res.status(401).json({
+                message: 'Auth failed' // Do not mention that email does not exist, can make it easier for people to identify users of the system
+            });
+        }
+        bcrypt.compare(req.body.password, user[0].password, (err, result) => {
+            if (err) {
+                return res.status(401).json({
+                    message: 'Auth failed'
+                });
+            }
+            if (result) {   // if username and password are correct
+                const token = jwt.sign({
+                    email: user[0].email,
+                    userId: user[0]._id
+                },
+                process.env.JWT_KEY,
+                {
+                    expiresIn: "1h"
+                });
+                return res.status(200).json({
+                    message: 'Auth successful',
+                    token : token
+                });
+            }
+            return res.status(401).json({   // if we reach this point, the password was incorrect
+                message: 'Auth failed'
+            });
+        });
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: err
+        });
+    })
 });
 
 router.delete('/:userId', (req, res, next) => {
