@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router(); // express router - ships with express - gives us cabibilities to handle different routes, endpoints with differet http verbs
 const mongoose = require('mongoose');
+const checkAuth = require('../middleware/check-auth');
 
 const Order = require('../models/order');
 const Product = require('../models/product');
 
-router.get('/', (req, res, next) => {
+router.get('/', checkAuth, (req, res, next) => {
     Order.find() // no arguments - gets all orders
     .select('product quantity _id')
     .populate('product', 'name') // first argument - specify the name of the property you want to populate. Second argument - same as select, list of properties of the populated object you want to fetch
@@ -33,7 +34,7 @@ router.get('/', (req, res, next) => {
     }) 
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', checkAuth, (req, res, next) => {
     Product.findById(req.body.productId) // checks that the product passed actually exists
         .then(product => {
             if (!product) { // if product is null(ish) - i.e. the product does not exist
@@ -73,7 +74,7 @@ router.post('/', (req, res, next) => {
         });
 });
 
-router.get('/:orderId', (req, res, next) => {
+router.get('/:orderId', checkAuth, (req, res, next) => {
     Order.findById(req.params.orderId)
     .populate('product', 'id name price') // have more detailed product information when you get information about a specific order
     .exec()
@@ -98,7 +99,7 @@ router.get('/:orderId', (req, res, next) => {
     })
 });
 
-router.delete('/:orderId', (req, res, next) => {
+router.delete('/:orderId', checkAuth, (req, res, next) => {
     Order.remove({ _id: req.params.orderId })
     .exec()
     .then(result => {

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router(); // express router - ships with express - gives us cabibilities to handle different routes, endpoints with differet http verbs
 const mongoose = require('mongoose');
 const multer = require('multer'); // used for importing of files
+const checkAuth = require('../middleware/check-auth');
 
 const storage = multer.diskStorage({  // multer will execute these functions whenever a new file is recieved
     destination: function(req, file, cb) { // where files are stored
@@ -62,7 +63,7 @@ router.get('/', (req, res, next) => { // get is a method that will handle incomi
     })
 });
 
-router.post('/', upload.single('productImage'), (req, res, next) => { // you can pass as many arguments (handlers) as you want prior to the function before we handle the incoming request. upload.single() will parse single file - 'productImage' name of the key when sending the form-data
+router.post('/', checkAuth, upload.single('productImage'), (req, res, next) => { // you can pass as many arguments (handlers) as you want prior to the function before we handle the incoming request. upload.single() will parse single file - 'productImage' name of the key when sending the form-data
     const product = new Product({
         _id: new mongoose.Types.ObjectId(), // will generate a unique id
         name: req.body.name, // comes from body-parser 
@@ -118,7 +119,7 @@ router.get('/:productId', (req, res, next) => { // using `:` followed by any var
     });
 });
 
-router.patch('/:productId', (req, res, next) => { // using `:` followed by any variable name of your choice
+router.patch('/:productId', checkAuth, (req, res, next) => { // using `:` followed by any variable name of your choice
     const id = req.params.productId;
     const updateOps = {};
     for (const ops of req.body) {
@@ -143,7 +144,7 @@ router.patch('/:productId', (req, res, next) => { // using `:` followed by any v
     });
 });
 
-router.delete('/:productId', (req, res, next) => { // using `:` followed by any variable name of your choice
+router.delete('/:productId', checkAuth, (req, res, next) => { // using `:` followed by any variable name of your choice
     const id = req.params.productId;
     Product.deleteOne({_id: id}) // i.e. remove any objects in the database whose `_id` matches local `id` variable
     .exec()
